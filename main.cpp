@@ -5,71 +5,71 @@
 #include <string.h>
 #include <assert.h>
 #include "bf2mesh.h"
-
-
-// case-insensitive string compare
-bool StrMatch(const char *a, const char *b)
-{
- assert(a != NULL);
- assert(b != NULL);
- const size_t lena = strlen(a);
- const size_t lenb = strlen(b);
- if (lena != lenb) return false;
- for (size_t i=0; i<lena; i++)
- {
-  if (tolower(a[i]) != tolower(b[i])) return false;
- }
- return true;
-}
-
+#include "bf2conParser.h"
 
 
 // main
 int main(int argnum, char *arg[])
 {
- printf("---------------------------------------------\n");
- printf("MeshMan v0.1\n");
- printf("By Remdul (www.bytehazard.com)\n");
- printf("For Forgotten Hope Mod (www.fhmod.org)\n");
- printf("---------------------------------------------\n");
+	 printf("---------------------------------------------\n");
+	 printf("MeshMan v0.1\n");
+	 printf("By Remdul (www.bytehazard.com)\n");
+	 printf("For Forgotten Hope Mod (www.fhmod.org)\n");
+	 printf("---------------------------------------------\n");
  
- if (argnum != 2) {
-  printf("Error: Invalid argument.\n");
-  printf("Usage: meshman <filename>\n");
-  return 2;
- }
+	 if (argnum != 2) {
+	  printf("Error: Invalid argument.\n");
+	  printf("Usage: meshman <filename>\n");
+	  return 2;
+	 }
  
- const char *fname = arg[1];
+	 const char *fname = arg[1];
  
- printf("Input: %s\n", fname);
+	 printf("Input: %s\n", fname);
  
- // determine file extension
- const char *ext = strrchr(fname,'.');
- if (ext == NULL) {
-  printf("Input file name extension missing.\n");
-  return 3;
- }
- ext++;
- mesh.isBundledMesh = StrMatch(ext,"BundledMesh");
- mesh.isSkinnedMesh = StrMatch(ext,"SkinnedMesh");
- if (mesh.isBundledMesh) {
-  printf("Using BundledMesh profile...\n");
- } else if (mesh.isSkinnedMesh) {
-  printf("Using SkinnedMesh profile...\n");
- } else {
-  printf("Using StaticMesh profile...\n");
- }
- printf("\n");
+	 // determine file extension
+	 const char *ext = strrchr(fname,'.');
+	 if (ext == NULL) {
+	  printf("Input file name extension missing.\n");
+	  return 3;
+	 }
+	 ext++;
+
+	 int ret=-1;
+	 if (StrMatch(ext, "con") || StrMatch(ext, "inc")) {
+		 BF2ConParser conParser = BF2ConParser(std::string(fname));
+		 conParser.loadFiles();
+		 ret = 0;
+	 }
+	 else if (StrMatch(ext, "CollisionMesh")) {
+		 printf("Using CollisionMesh profile...\n");
+		 bf2col colmesh;
+		 ret = colmesh.Load(fname);
+	 }
+	 else if (StrMatch(ext, "ske")) {
+		 printf("Using Skeleton profile...\n");
+		 bf2ske skeleton;
+		 ret = skeleton.Load(fname);
+	 }
+	 else if (StrMatch(ext, "baf")) {
+		 printf("Using Animation profile...\n");
+		 bf2baf anim;
+		 ret = anim.Load(fname);
+	 }
+	 else
+	 {
+		 printf("Using Standard profile...\n");
+		 bf2mesh mesh;
+		 ret = mesh.Load(fname, ext);
+	 }
+
+	 if (ret != 0) {
+		 printf("Error occurred while parsing file.\n");
+		 return ret;
+	 }
  
- // load mesh
- const int ret = mesh.Load( fname );
- if (ret != 0) {
-  printf("Error occurred while parsing file.\n");
-  return ret;
- }
- 
- // success
- printf("---------------------------------------------\n");
- return 0;
+	 // success
+	 printf("---------------------------------------------\n");
+	 return 0;
 }
 
